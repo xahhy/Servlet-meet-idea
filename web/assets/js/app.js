@@ -267,6 +267,7 @@
                         function (data) {
                             if (data == 'Operate successed') {
                                 console.log("regester continue click done");
+                                TStable.fresh();
                                 //count down start
                                 var time = parseInt(e.data[1]) * 60;
                                 time_map[cur_click_id] = time;
@@ -439,7 +440,10 @@
         });
 
     }
-
+    function zfill(num, size){
+        var s = "000000000" + num;
+        return s.substr(s.length-size);
+    }
     function m_timer(id) {
         window.setInterval(function () {
             if (time_map[id] == 0)
@@ -455,8 +459,11 @@
                 return;
             }
             var hour = parseInt(t / 3600);
-            var min = parseInt(t / 60);
+            var min = parseInt(t / 60 % 60);
             var sec = parseInt(t % 60);
+            hour= zfill(hour,2);
+            min = zfill(min, 2);
+            sec = zfill(sec, 2);
             $("#" + id).children().last().prev().html(hour + ":" + min + ":" + sec);
         }, 1000);
     }
