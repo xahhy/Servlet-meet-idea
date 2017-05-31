@@ -19,16 +19,11 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class DBUtils {
-
 	private static String driverName = "com.mysql.jdbc.Driver";
-	
 	private static String urlName;  //  tsuser
 	private static String userName ;   // tongshi
 	private static String password ; // 123
-	
-	private static String prefix;
-	private static String dir;
-	
+    private static String dir;
 	static {
 		String filename = "jdbc.properties";  
 		Properties props = new Properties();  
@@ -37,8 +32,7 @@ public class DBUtils {
 			urlName  =  props.getProperty("url");
 			userName =  props.getProperty("user");
 			password =  props.getProperty("password");
-			prefix = props.getProperty("prefix");
-		} catch (IOException e) {
+        } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}  
@@ -52,8 +46,6 @@ public class DBUtils {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-		
-
 	}
 	
 	public static String getDriverName() {
@@ -120,27 +112,16 @@ public class DBUtils {
 	public static String SelectChannelInfo()
 	{
 		String result;
-		
 		//result = "{\n\"users\":[\n";
-		
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
 		JSONObject json = new JSONObject();
-				
 		JSONArray category = new JSONArray();
-		
-		
-		
 		try {
-			
 			con = getConnection();
 			sql = con.createStatement();
 			rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url FROM channel");
-			
-			
-//			int flag = 0;
 			while(rs.next()){
 				
 				if(rs.getInt(4) == 1)
@@ -203,8 +184,6 @@ public class DBUtils {
 				con = getConnection();
 				sql = con.createStatement();
 				rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url,start,client_ip FROM channel");
-				
-				
 	//			int flag = 0;
 				while(rs.next()){
 					
@@ -231,15 +210,9 @@ public class DBUtils {
 						
 						select.add(item);
 					}
-					
-	
 				}
-				
 				sql = con.createStatement();
-				rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url FROM channel");	
-				
-				
-				
+				rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url FROM channel");
 			} catch (SQLException e) {
 				// TODO: handle exception
 				e.printStackTrace();
@@ -247,26 +220,17 @@ public class DBUtils {
 			{
 				closeConnection(con);
 			}
-			
-			
-			
-			
 			json.put("category", category);
 			json.put("sel", select);
-			
+
 			return json.toString();
 		}
 
 	public static String SelectChannel(String channel, int day)
 	{
-		
 		if(day<0 || day >7)return null;
-		
 		String result;
-			
-		Calendar c = Calendar.getInstance();  
-		
-		
+		Calendar c = Calendar.getInstance();
 		Date date = new Date();
 		c.setTime(date); 
 		
@@ -276,23 +240,14 @@ public class DBUtils {
 		
 		date = c.getTime();
 		
-		SimpleDateFormat bartDateFormat = new SimpleDateFormat
-  				("yyyy-MM-dd"); 
-		
-		//result = "{\n\"users\":[\n";
-		
+		SimpleDateFormat bartDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
-		
+
 		JSONObject json = new JSONObject();
-				
 		json.put("channel_id", channel);
 		json.put("date", bartDateFormat.format(date));
-		
-		//System.out.println(bartDateFormat.format(date));
-		
 		JSONArray category = new JSONArray();
 		
 		try {
@@ -301,14 +256,7 @@ public class DBUtils {
 			sql = con.createStatement();
 			rs = sql.executeQuery("SELECT event_id,channel_id,start_time,end_time,url,finished,title FROM program where channel_id='"+ channel
 									+ "' and TO_DAYS(start_time) = TO_DAYS(NOW()) - " + day + " order by start_time");
-			
-			
-			
-			
-//			int flag = 0;
 			while(rs.next()){
-				
-
 				JSONObject item = new JSONObject();
 				item.put("start_time", rs.getString(3));
 				item.put("end_time", rs.getString(4));
@@ -319,21 +267,17 @@ public class DBUtils {
 					url_temp = url_temp.replace("\n", "");
 					item.put("url", url_temp);
 				}
-					
-				else item.put("url", "");
+				else
+				    item.put("url", "");
 				
 				if("1".equals(rs.getString(6)))
 					item.put("finished","1");
-				else item.put("finished","0");
+				else
+				    item.put("finished","0");
 				
 				item.put("title", rs.getString(7));
-				
 				category.add(item);
-
-						
 			}
-			
-			
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
@@ -365,7 +309,6 @@ public class DBUtils {
 			if(rs.next()){
 	//			System.out.println(rs.getString(1)+"  "+rs.getString(2));
 				//System.out.println("exist");
-				
 				flag = 1;
 				//System.out.println("exist");
 				//return  result;
@@ -382,7 +325,6 @@ public class DBUtils {
 		if(flag == 1)
 		{
 			String sqlString = "update channel set channel_name=\""+name+"\",rtmp_url='"+url+"' ,client_ip='"+ ip  +"',active=1 where channel_id=\"" +id+"\"";
-			
 			//System.out.println(sqlString);
 			try {
 				con = getConnection();
@@ -398,13 +340,7 @@ public class DBUtils {
 			{
 				closeConnection(con);
 			}
-			
-			
 		}
-		
-		
-		
-		
 		return result;
 		
 	}
@@ -418,18 +354,14 @@ public class DBUtils {
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
+
 		try {
 			//String sqlString = "select count() from user where user='"+username+"';";
 			con = getConnection();
 			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-			
 			String sqlString = "insert into channel (channel_id,channel_name,rtmp_url,client_ip,active) values ('"+id+"','"+name+"','"+url+"','"+ip+"',1);";
 			sql.executeUpdate(sqlString);
-
 			result = "Operate successed";
-			
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			// TODO: handle exception
@@ -457,22 +389,8 @@ public class DBUtils {
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
-		try {
-			con = getConnection();
-			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-			sql.executeUpdate(sqlString);
-			result = "Operate successed";
-			
-		} catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
-			result = "Invalid Request";
-		}finally
-		{
-			closeConnection(con);
-		}
-		
+
+        result = executeSQL(sqlString);
 		FileUtils.DeleteDir(dir + channel);
 		
 		return result;
@@ -491,80 +409,51 @@ public class DBUtils {
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
-		try {
-			con = getConnection();
-			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-			sql.executeUpdate(sqlString);
-			result = "Operate successed";
-			
-		} catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
-			result = "Invalid Request";
-		}finally
-		{
-			closeConnection(con);
-		}
-		
+
+        result = executeSQL(sqlString);
 		return result;
 	}
 	
 	
 	public static void InsertProgram(String channel_id)
 	{
-		Connection con=null;
 		Statement sql;
 		ResultSet rs;
 		
 		// delete old
 		String sqlString = "delete from program where channel_id=\"" +channel_id+"\" and finished=0;";
-		
-		try {
-			con = getConnection();
-			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-			sql.executeUpdate(sqlString);
+        executeSQL(sqlString);
 
-			
-		} catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
-
-		}finally
-		{
-			closeConnection(con);
-		}
-	
-		// insert new 
-		
+        // insert new
 		Date currentTime = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String dateString = formatter.format(currentTime);
-
-//		System.out.println(dateString);
-		
 		sqlString = "insert into program (channel_id,start_time,finished,title) values ('"+channel_id+"','"+dateString+"',0,'会议');";
+        executeSQL(sqlString);
+    }
 
-		try {
-			con = getConnection();
-			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-			sql.executeUpdate(sqlString);
-			
-		} catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
+    private static String executeSQL(String sqlString) {
+        Statement sql;
+        Connection con = null;
+        String result;
+        try {
+            con = getConnection();
+            sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+            sql.executeUpdate(sqlString);
+            result = "Operate successed";
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+            result = "Invalid Request";
+        }finally
+        {
+            closeConnection(con);
+        }
+        return result;
+    }
 
-		}finally
-		{
-			closeConnection(con);
-		}
-		
-		
-		
-	}
-	
-	
-	public static String BatchDelete()
+
+    public static String BatchDelete()
 	{
 		String res = null;
 		
@@ -591,14 +480,10 @@ public class DBUtils {
 	
 	
 	public static void SetStart(String channel_id, int start){
-		
-			
 		String sqlString = "update channel set start="+ start+" where channel_id=\"" +channel_id+"\"";
-		
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
 		try {
 			con = getConnection();
 			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
