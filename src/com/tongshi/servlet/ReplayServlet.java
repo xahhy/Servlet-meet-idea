@@ -10,8 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.tongshi.common.DBUtils;
-@WebServlet(name = "ReplayServlet",
-		urlPatterns = { "/serv" } )
+@WebServlet(name="ReplayServlet",urlPatterns = {"/serv"})
 public class ReplayServlet extends HttpServlet {
 
 	/**
@@ -73,10 +72,7 @@ public class ReplayServlet extends HttpServlet {
 				e.printStackTrace();
 				return;
 			}
-			
-			
 			result = DBUtils.SelectChannel(list, day);
-			
 		}
 		
 		

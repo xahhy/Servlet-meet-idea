@@ -37,8 +37,8 @@ public class AdminServlet extends HttpServlet {
         @Override
         public void run() {
             // TODO Auto-generated method stub
-//			CMUtils.StopChannel(id);
-            DBUtils.SetStart(id, 0);
+			CMUtils.StopChannel(id);
+//            DBUtils.SetStart(id, 0);
             System.out.println("stop channel " + id + " done!");
         }
     }
@@ -95,7 +95,7 @@ public class AdminServlet extends HttpServlet {
         String ip = request.getParameter("ip");
         String time = request.getParameter("time");
         String s = request.getParameter("s");
-
+        System.out.println("Admin Get request");
         //System.out.println(feed + "  "  +  list + "  " + d);
         String result = "";
         if (op == null) return;
@@ -131,23 +131,23 @@ public class AdminServlet extends HttpServlet {
             result = OP_SUCCESS;
             switch (s) {
                 case "stop":
-//				    result = CMUtils.StopChannel(id);
-                    DBUtils.SetStart(id, 0);
+				    result = CMUtils.StopChannel(id);
+//                    DBUtils.SetStart(id, 0);
                     System.out.println("stop channel " + id);
                     break;
                 case "start":
                     System.out.println("try to start channel:" + id + " time:" + time + " min");
                     if (time.equals("")) {
                         System.out.println("start channel " + id + " time=forever");
-//					result = CMUtils.StartChannel(id);
-                        DBUtils.SetStart(id, 1);
+    					result = CMUtils.StartChannel(id);
+//                        DBUtils.SetStart(id, 1);
                     } else {
                         try {
                             int countDown = Integer.parseInt(time);
                             if (countDown != 0) {
                                 System.out.println("start channel " + id + " time=" + time + " min");
-//							result = CMUtils.StartChannel(id);
-                                DBUtils.SetStart(id, 1);
+	    						result = CMUtils.StartChannel(id);
+//                                DBUtils.SetStart(id, 1);
                                 myTimer timer = new myTimer(countDown);
                                 myTimerTask task = new myTimerTask(id);
                                 timer.task = task;
@@ -155,7 +155,8 @@ public class AdminServlet extends HttpServlet {
                                 m_TimerList.put(id, timer);
                             } else {
                                 System.out.println("start channel " + id + " forever");
-                                DBUtils.SetStart(id, 1);
+	    						result = CMUtils.StartChannel(id);
+//                                DBUtils.SetStart(id, 1);
                             }
                         } catch (Exception e) {
                             // TODO: handle exception
@@ -196,7 +197,7 @@ public class AdminServlet extends HttpServlet {
                     break;
             }
         }
-        System.out.println("result=" + result);
+//        System.out.println("result=" + result);
         PrintWriter out = response.getWriter();
         out.print(result);
         out.flush();
