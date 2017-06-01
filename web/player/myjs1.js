@@ -31,6 +31,8 @@ function playTrailer(video) {
   thePlayer.load([{
     file: video,
   }]);
+    $("#download-link").attr("href",video);
+  console.log("playTrailer");
 }
 
 /*页面初始化：节目单*/

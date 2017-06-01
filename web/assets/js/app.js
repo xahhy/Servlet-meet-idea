@@ -213,35 +213,31 @@
         }else{
             $("#meet-continue").find("#meet-continue-name").val(pre_name);
         }
+        $("#meet-continue-time").val( $("#"+cur_click_id).find(".td-duration").html() );
         $("#meet-continue").modal({
             relatedTarget: this,
             closeViaDimmer: 0,
             onConfirm: function (e) {
-                status_map[cur_click_id] = false;
                 console.log('你输入的是：' + e.data[0] + '');
                 console.log('number：' + e.data[1] + '');
-//          status_map[cur_click_id]=true;
                 console.log("continue send op: continue");
                 if (e.data == "") {
                     alert("continue failed");
                 } else {
-                    // TStable.addData(e.data[0],e.data[1],e.data[2],e.data[3]);
                     TStable.updateMeet(cur_click_id, e.data[0], e.data[1]);
                 }
                 console.log("continue send op: continue");
                 $.get(deletePath, {op: "status", id: cur_click_id, s: "continue", time: e.data[1]},
                     function (data) {
                         if (data == 'Operate successed') {
-                            status_map[cur_click_id] = true;
                             //count down start
                             TStable.fresh();
                             var time = parseInt(e.data[1]) * 60;
                             console.log("new time=" + time);
-                            time_map[cur_click_id] = time;
                         } else if (data == 'Operate failed') {
-                            status_map[cur_click_id] = false;
+                            alert("录制时长设置失败，不能小于已录制时间");
+                            TStable.fresh();
                         } else if (data == 'Cancel Ok') {
-                            status_map[cur_click_id] = false;
                         }
                     });
             },
@@ -272,7 +268,7 @@
             button_delete.addClass('am-disabled');
 
             $("#meet-prompt").find("#meet-prompt-name").val("meet");
-
+            $("#meet-prompt").find("#meet-prompt-time").val(0);
             $("#meet-prompt").modal({
                 relatedTarget: this,
                 closeViaDimmer: 0,
@@ -448,8 +444,8 @@
                         t.find('.td-status').html('<button type="button" class="am-btn am-btn-default am-btn-xs am-text-secondary bt-status"><span class="am-icon-play"></span> </button>未运行');
                         t.find('.bt-status').click(statusClick);
                         button_continue.addClass('am-disabled');
-                        button_edit.removeClass('am-disbled');
-                        button_delete.removeClass('am-disbled');
+                        button_edit.removeClass('am-disabled');
+                        button_delete.removeClass('am-disabled');
                     } else if (temp_list[i].state == 1) {
                         t.find('.td-status').html('<button type="button" class="am-btn am-btn-default am-btn-xs am-text-danger bt-status"><span class="am-icon-stop"></span> </button>已运行');
                         t.find('.bt-status').click(statusClick);
@@ -463,9 +459,9 @@
                         alert(temp_list[i].channel_id + "  启动失败");
                         t.find('.bt-status').trigger('click');
                     }
-                    t.find(".td-duration").html("-:-:-");
-                    t.find(".td-start-time").html("-:-:-");
-                    t.find(".td-end-time").html("-:-:-");
+                    t.find(".td-duration").html("");
+                    t.find(".td-start-time").html("");
+                    t.find(".td-end-time").html("");
                 }
             }
             for (var i = 0; i < temp_time_list.length; i++) {

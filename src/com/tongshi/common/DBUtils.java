@@ -208,7 +208,7 @@ public class DBUtils {
 					JSONObject item = new JSONObject();
 					/* convert yyyy-MM-dd HH:MM:SS to  MM-dd HH:MM:SS*/
 					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    SimpleDateFormat sdf2 = new SimpleDateFormat("MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf2 = new SimpleDateFormat("MM-dd HH:mm");
                     Date start_date = new Date();
                     Date end_date = new Date();
                     String start_time_full = rs.getString("start_time");
@@ -631,6 +631,7 @@ public class DBUtils {
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
+		String sqlString;
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e1) {
@@ -638,8 +639,12 @@ public class DBUtils {
 			e1.printStackTrace();
 		}
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dateString = formatter.format(stop_date);
-	 	String sqlString = "update program set end_time='"+ dateString+"' where channel_id=\"" +channel_id+"\" and finished=0;" ;
+        if(stop_date != null){
+			String dateString = formatter.format(stop_date);
+			sqlString = "update program set end_time='"+ dateString+"' where channel_id=\"" +channel_id+"\" and finished=0;" ;
+		}else {
+			sqlString = "update program set end_time=NULL where channel_id=\"" +channel_id+"\" and finished=0;" ;
+		}
 		try {
 			con = getConnection();
 			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);

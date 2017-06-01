@@ -34,9 +34,7 @@ public class CMUtils {
 	public static String StartChannel(String channel_id)
 	{
 		String res = "Invalid Request";
-		
 		DBUtils.SetStart(channel_id, 2);
-		
 		String rtmp_url = DBUtils.GetUrl(channel_id);
 		if(rtmp_url == null)
 		{

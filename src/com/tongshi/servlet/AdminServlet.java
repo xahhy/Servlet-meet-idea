@@ -22,7 +22,7 @@ public class AdminServlet extends HttpServlet {
 
     String OP_FAILED = "Operate failed";
     String OP_SUCCESS = "Operate successed";
-    boolean DEBUG = true;
+    boolean DEBUG = false;
     class myTimerTask extends TimerTask {
         private String id;
         public String start_time="";
@@ -43,8 +43,6 @@ public class AdminServlet extends HttpServlet {
     class myTimer extends Timer {
         public Date start_date;//Count Down time in seconds
         public myTimerTask task;
-
-
     }
 
     private Map<String, myTimer> m_TimerList;
@@ -55,7 +53,6 @@ public class AdminServlet extends HttpServlet {
     public AdminServlet() {
         super();
         m_TimerList = new HashMap<String, myTimer>();
-
     }
 
     /**
@@ -136,17 +133,15 @@ public class AdminServlet extends HttpServlet {
                     if (time.equals("")) {
                         System.out.println("start channel " + id + " time=forever");
                         result = setStatus(id, 1);
-                        DBUtils.InsertProgram(id);
 //                        result = CMUtils.StartChannel(id);
 //                        DBUtils.SetStart(id, 1);
                     } else {
                         try {
                             int countDown = Integer.parseInt(time);
                             if (countDown != 0) {
+                                result = setStatus(id, 1);
                                 start_time = DBUtils.GetStartTime(id);
                                 System.out.println("start channel " + id + " time=" + time + " min "+"start_time= "+start_time);
-                                result = setStatus(id, 1);
-                                DBUtils.InsertProgram(id);
 
                                 myTimer timer = new myTimer();
                                 myTimerTask task = new myTimerTask(id);
@@ -164,8 +159,11 @@ public class AdminServlet extends HttpServlet {
                             } else {
                                 System.out.println("start channel " + id + " forever");
                                 result = setStatus(id, 1);
-                                DBUtils.InsertProgram(id);
-                                //	    						result = CMUtils.StartChannel(id);
+                                myTimer timer = new myTimer();
+                                Date start_date = new Date();
+                                timer.start_date = (Date)start_date.clone();
+                                m_TimerList.put(id, timer);
+                                //result = CMUtils.StartChannel(id);
 //                                DBUtils.SetStart(id, 1);
                             }
                         } catch (Exception e) {
@@ -180,44 +178,58 @@ public class AdminServlet extends HttpServlet {
                     result = OP_SUCCESS;
                     System.out.println(DBUtils.GetStartTime(id));
                     if (time.equals("")) {
+                        System.out.println("time is Empty!");
                         myTimer timer = m_TimerList.get(id);
                         timer.task.cancel();
                         DBUtils.SetEndTime(id,null);
                         System.out.println("cancel channel " + id + " task");
                         result = "Cancel Ok";
                     }
-                    try {
-                        int countDown = Integer.parseInt(time);
-                        myTimer timer = m_TimerList.get(id);
-                        int time_new = Integer.parseInt(time);
-                        if (countDown != 0) {
-                            System.out.println("channel " + id + " new time is:" + time_new + " min");
-                            timer.task.cancel();
-                            myTimerTask task = new myTimerTask(id);
-                            timer.task = task;
+                    else {
+                        try {
+                            int countDown = Integer.parseInt(time);
+                            myTimer timer = m_TimerList.get(id);
+                            System.out.println("continue timer:"+timer);
+                            int time_new = Integer.parseInt(time);
+                            if (countDown != 0) {
+                                System.out.println("channel " + id + " new time is:" + time_new + " min");
+                                try {
+                                    timer.task.cancel();
+                                } catch (Exception e) {
+                                    System.out.println(e);
+                                }
 
-                            Date stop_date = new Date();
-                            Date start_date = new Date();
-                            start_date = timer.start_date;
-                           if(start_date.before(stop_date)){
-                               System.out.println("legal reset date ");
-                               System.out.println("start date: "+stop_date);
-                               stop_date.setTime(start_date.getTime()+countDown*60*1000);
-                               System.out.println("stop date: "+stop_date);
-                               timer.schedule(task, stop_date);
-                               DBUtils.SetEndTime(id,stop_date);
-                               System.out.println("reschedule done");
-                           }
-                        } else {
-                            //Just stop timer task for manually stop
-                            timer.task.cancel();
-                            DBUtils.SetEndTime(id,null);
-                            System.out.println("stop timer task in channel " + id);
-                            result = "Cancel Ok";
+                                Date stop_date = new Date();
+                                Date start_date = new Date();
+                                Date now = new Date();
+                                start_date = timer.start_date;
+                                System.out.println("legal reset date ");
+                                System.out.println("start date: "+stop_date);
+                                stop_date.setTime(start_date.getTime()+countDown*60*1000);
+                                System.out.println("stop date: "+stop_date);
+                                if(now.before(stop_date)){
+                                    myTimerTask task = new myTimerTask(id);
+                                    timer.task = task;
+                                    timer.schedule(task, stop_date);
+                                    DBUtils.SetEndTime(id,stop_date);
+                                    System.out.println("reschedule done");
+                                    result = OP_SUCCESS;
+                                }else{
+                                    System.out.println("end time is earlier than start time");
+                                    result = OP_FAILED;
+                                }
+
+                            } else {
+                                //Just stop timer task for manually stop
+                                timer.task.cancel();
+                                DBUtils.SetEndTime(id,null);
+                                System.out.println("stop timer task in channel " + id);
+                                result = "Cancel Ok";
+                            }
+                        } catch (Exception e) {
+                            // TODO: handle exception
+                            result = OP_FAILED;
                         }
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                        result = OP_FAILED;
                     }
                     break;
             }
@@ -232,7 +244,11 @@ public class AdminServlet extends HttpServlet {
     private String setStatus(String id, int status) {
         String result = OP_SUCCESS;
         if(DEBUG==false){
-            result = CMUtils.StartChannel(id);
+            if(status == 1){
+                result = CMUtils.StartChannel(id);
+            } else if (status == 0) {
+                result = CMUtils.StopChannel(id);
+            }
         }else{
             DBUtils.SetStart(id, status);
         }
