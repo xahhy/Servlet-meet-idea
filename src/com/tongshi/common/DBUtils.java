@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -159,34 +160,23 @@ public class DBUtils {
 		
 		return json.toString();
 	}
-	
-	/*
-		 *  ��ȡ��ݿ����������
-		 *  @return ������ݵ�json
-		 */
+
 		public static String SelectChannelInfoAdmin()
 		{
 			String result;
-			
 			//result = "{\n\"users\":[\n";
-			
 			Connection con=null;
 			Statement sql;
 			ResultSet rs;
-			
 			JSONObject json = new JSONObject();
-					
 			JSONArray category = new JSONArray();
+			JSONArray category_time = new JSONArray();
 			JSONArray select = new JSONArray();
-			
 			try {
-				
 				con = getConnection();
 				sql = con.createStatement();
 				rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url,start,client_ip FROM channel");
-	//			int flag = 0;
 				while(rs.next()){
-					
 					if(rs.getInt(4) == 1)
 					{
 						JSONObject item = new JSONObject();
@@ -212,6 +202,42 @@ public class DBUtils {
 					}
 				}
 				sql = con.createStatement();
+				rs = sql.executeQuery("SELECT channel_id,DATE_FORMAT(start_time,'%Y-%m-%d %H:%i:%s')AS start_time," +
+                        "DATE_FORMAT(end_time,'%Y-%m-%d %H:%i:%s')AS end_time FROM program where finished=0;");
+				while(rs.next()){
+					JSONObject item = new JSONObject();
+					/* convert yyyy-MM-dd HH:MM:SS to  MM-dd HH:MM:SS*/
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf2 = new SimpleDateFormat("MM-dd HH:mm:ss");
+                    Date start_date = new Date();
+                    Date end_date = new Date();
+                    String start_time_full = rs.getString("start_time");
+					String end_time_full = rs.getString("end_time");
+					String start_time="",end_time="";
+                    long duration = 0;
+
+					try{
+                        start_date = sdf.parse(start_time_full);
+                        start_time = sdf2.format(start_date);
+                    }catch (Exception e){
+
+                    }
+                    try {
+                        end_date = sdf.parse(end_time_full);
+                        end_time = sdf2.format(end_date);
+                        duration = end_date.getTime() - start_date.getTime();
+                        duration = duration>0 ? duration/1000/60 : 0;
+                    } catch (Exception e) {
+
+                    }
+                    //                    System.out.println(duration);
+//                    System.out.println(start_time);
+                    item.put("channel_id",rs.getString("channel_id"));
+                    item.put("start_time", start_time);
+                    item.put("end_time", end_time);
+                    item.put("duration", duration);
+					category_time.add(item);
+				}
 				rs = sql.executeQuery("SELECT id,channel_id,channel_name,active,rtmp_url FROM channel");
 			} catch (SQLException e) {
 				// TODO: handle exception
@@ -220,6 +246,7 @@ public class DBUtils {
 			{
 				closeConnection(con);
 			}
+			json.put("time",category_time);
 			json.put("category", category);
 			json.put("sel", select);
 
@@ -348,13 +375,11 @@ public class DBUtils {
 	
 	public static String InsertChannel(String id,String name,String url, String ip)
 	{
-		
-		String result = "Invalid Request";
-		
+		String INVALID_REQUEST = "Invalid Request";
+		String result = INVALID_REQUEST;
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-
 		try {
 			//String sqlString = "select count() from user where user='"+username+"';";
 			con = getConnection();
@@ -365,44 +390,30 @@ public class DBUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 			// TODO: handle exception
-			result = "Invalid Request";
+			result = INVALID_REQUEST;
 		}finally
 		{
 			closeConnection(con);
 		}
-		
 		return result;
-		
-		
-		
-		
 	}
 	
 	public static String DeleteChannel(String channel)
 	{
 		String result = "Invalid Request";
-		
-		
 //		String sqlString = "update channel set rtmp_url='',active=0,client_ip='' where channel_id=\"" +channel+"\"";
 		String sqlString = "delete from channel  where channel_id=\"" +channel+"\"";
-
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-
         result = executeSQL(sqlString);
 		FileUtils.DeleteDir(dir + channel);
-		
 		return result;
-		
 	}
-	
-	
+
 	public static String EditChannel(String channel_id,String channel_name,String rtmp_url ,String ip)
 	{
 		String result = "Invalid Request";
-		
-		
 		String sqlString = "update channel set rtmp_url='"+ rtmp_url+"',channel_name=\""+channel_name +"\",client_ip='" + ip + "' where channel_id=\"" +channel_id+"\"";
 		System.out.println(sqlString);
 		
@@ -504,24 +515,17 @@ public class DBUtils {
 	public static String GetUrl(String channel_id)
 	{
 		String res = null;
-		
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-			
 		try {
-			
 			con = getConnection();
 			sql = con.createStatement();
 			rs = sql.executeQuery("SELECT rtmp_url FROM channel where channel_id='"+channel_id+"';");	
-			
 //			int flag = 0;
 			while(rs.next()){
-				
-				res = rs.getString(1);	
-				
+				res = rs.getString(1);
 			}
-					
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
@@ -529,10 +533,31 @@ public class DBUtils {
 		{
 			closeConnection(con);
 		}
-		
-		
-		
-		return res;	
+		return res;
+	}
+
+	public static String GetStartTime(String channel_id)
+	{
+		String res = null;
+		Connection con=null;
+		Statement sql;
+		ResultSet rs;
+		try {
+			con = getConnection();
+			sql = con.createStatement();
+			rs = sql.executeQuery("SELECT start_time FROM program where channel_id='"+channel_id+"'and finished=0;");
+//			int flag = 0;
+			while(rs.next()){
+				res = rs.getString("start_time");
+			}
+		} catch (SQLException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}finally
+		{
+			closeConnection(con);
+		}
+		return res;
 	}
 	
 	public static String GetInfo(String channel_id, String col)
@@ -575,27 +600,20 @@ public class DBUtils {
 	public static String UpdateMeet(String channel_id, String name)
 	{
 		String result = "Invalid Request";
-		
 		Connection con=null;
 		Statement sql;
 		ResultSet rs;
-		
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
 	 	String sqlString = "update program set title='"+ name+"' where channel_id=\"" +channel_id+"\" and finished=0;" ;
-			
-		
 		try {
 			con = getConnection();
 			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
 			sql.executeUpdate(sqlString);
-			
-			
 			result = "Operate successed";
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -605,9 +623,38 @@ public class DBUtils {
 		{
 			closeConnection(con);
 		}
-		
 		return result;
-		
+	}
+	public static String SetEndTime(String channel_id, Date stop_date)
+	{
+		String result = "Invalid Request";
+		Connection con=null;
+		Statement sql;
+		ResultSet rs;
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String dateString = formatter.format(stop_date);
+	 	String sqlString = "update program set end_time='"+ dateString+"' where channel_id=\"" +channel_id+"\" and finished=0;" ;
+		try {
+			con = getConnection();
+			sql = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+			sql.executeUpdate(sqlString);
+			result = "Operate successed";
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}finally
+		{
+			closeConnection(con);
+		}
+
+		return result;
+
 	}
 	
 	public static void ClearChannel()

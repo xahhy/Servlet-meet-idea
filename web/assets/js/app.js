@@ -29,6 +29,7 @@
     TStable.list = [];
     TStable.display_list = [];
     TStable.sel_list = [];
+    TStable.time = [];
 
     function DATA(channel_id, channel_name, rtmp_url, client_ip, status) {
         this.channel_id = channel_id;
@@ -46,6 +47,12 @@
     function SEL(channel_id, channel_name) {
         this.channel_id = channel_id;
         this.channel_name = channel_name;
+    }
+    function TIME(channel_id, start_time,duration,end_time) {
+        this.channel_id = channel_id;
+        this.start_time = start_time;
+        this.end_time = end_time;
+        this.duration = duration;
     }
 
     var curPage = 1;
@@ -69,7 +76,13 @@
             });
             $.each(parsedJson.sel, function (idx, item) {
                 TStable.sel_list.push(new SEL(item.channel_id, item.channel_name));
-            });
+            })
+            // $.each(parsedJson.start_time, function (data) {
+            //     TStable.sel_list.push(new SEL(datachannel_id, item.channel_name));
+            // });
+            $.each(parsedJson.time, function (idx, item) {
+                TStable.time.push(new TIME(item.channel_id, item.start_time, item.duration, item.end_time));
+            })
             var status_temp;
             var button_delete_temp;
             var button_edit_temp;
@@ -114,7 +127,9 @@
                     '<td class="td-status"> ' +
                     status_temp +
                     '</td>' +
-                    '<td class="td-time">-:-:-</td>' +
+                    '<td class="td-start-time">-:-:-</td>' +
+                    '<td class="td-duration">-:-:-</td>' +
+                    '<td class="td-end-time">-:-:-</td>' +
                     '<td>'+button_continue+'</td>' +
                     '</tr>'
                 );
@@ -123,8 +138,17 @@
                 TStable.display_list[i].find('.bt-status').click(statusClick);
                 TStable.display_list[i].find('.bt-continue').click(continueClick);
             }
+
             display();
             setBottom();
+            for (var i = 0; i < TStable.time.length; i++) {
+                var item = TStable.time[i];
+                $("#" + item.channel_id).find(".td-start-time").html(item.start_time);
+                $("#" + item.channel_id).find(".td-end-time").html(item.end_time);
+                if(item.duration != 0)
+                    $("#" + item.channel_id).find(".td-duration").html(item.duration);
+            }
+
         });
     };
 
@@ -265,19 +289,20 @@
 
                     $.get(deletePath, {op: "status", id: cur_click_id, s: operate, time: e.data[1]},
                         function (data) {
-                            if (data == 'Operate successed') {
+                            var data = jQuery.parseJSON(data);
+                            if (data.result == 'Operate successed') {
                                 console.log("regester continue click done");
+                                $("#" + cur_click_id).find(".td-start-time").html(data.start_time);
                                 TStable.fresh();
                                 //count down start
                                 var time = parseInt(e.data[1]) * 60;
-                                time_map[cur_click_id] = time;
-                                if (has_timer[cur_click_id]) {
-//            	has_timer[cur_click_id]=true;
-                                } else {
-                                    m_timer(cur_click_id);
-                                    has_timer[cur_click_id] = true;
-                                }
-                            } else if (data == 'Invalid Request') {
+//                                 time_map[cur_click_id] = time;
+//                                 if (has_timer[cur_click_id]) {
+//                                 } else {
+//                                     m_timer(cur_click_id);
+//                                     has_timer[cur_click_id] = true;
+//                                 }
+                            } else if (data.result == 'Invalid Request') {
                             } else {
                             }
                         });
@@ -398,6 +423,7 @@
     TStable.fresh = function () {
         //console.log("inside call");
         var temp_list = [];
+        var temp_time_list = [];
         $.get(loadPath, {op: "category"}, function (data) {
             //alert(String(data));
             var parsedJson = jQuery.parseJSON(data);
@@ -406,6 +432,9 @@
                 //alert(item.username);
                 temp_list.push(new DATA(item.channel_id, item.channel_name, item.rtmp_url, item.client_ip, item.st));
             });
+            $.each(parsedJson.time, function (idx, item) {
+                temp_time_list.push(new TIME(item.channel_id, item.start_time, item.duration, item.end_time));
+            })
 
             for (var i = 0; i < temp_list.length; i++) {
                 if (temp_list[i].channel_id == TStable.list[i].channel_id) {
@@ -419,6 +448,8 @@
                         t.find('.td-status').html('<button type="button" class="am-btn am-btn-default am-btn-xs am-text-secondary bt-status"><span class="am-icon-play"></span> </button>未运行');
                         t.find('.bt-status').click(statusClick);
                         button_continue.addClass('am-disabled');
+                        button_edit.removeClass('am-disbled');
+                        button_delete.removeClass('am-disbled');
                     } else if (temp_list[i].state == 1) {
                         t.find('.td-status').html('<button type="button" class="am-btn am-btn-default am-btn-xs am-text-danger bt-status"><span class="am-icon-stop"></span> </button>已运行');
                         t.find('.bt-status').click(statusClick);
@@ -432,9 +463,20 @@
                         alert(temp_list[i].channel_id + "  启动失败");
                         t.find('.bt-status').trigger('click');
                     }
+                    t.find(".td-duration").html("-:-:-");
+                    t.find(".td-start-time").html("-:-:-");
+                    t.find(".td-end-time").html("-:-:-");
                 }
             }
+            for (var i = 0; i < temp_time_list.length; i++) {
+                var item = temp_time_list[i];
+                var t = $("#" + temp_time_list[i].channel_id);
+                t.find(".td-start-time").html(item.start_time);
+                t.find(".td-end-time").html(item.end_time);
+                if(item.duration !== 0)
+                    $("#" + item.channel_id).find(".td-duration").html(item.duration);
 
+            }
             //console.log(temp_list[i].channel_id + '  '+ TStable.list[i].channel_id);
 
         });
@@ -444,29 +486,29 @@
         var s = "000000000" + num;
         return s.substr(s.length-size);
     }
-    function m_timer(id) {
-        window.setInterval(function () {
-            if (time_map[id] == 0)
-                time_map[id] = 0;
-            else
-                time_map[id]--;
-
-            var t = parseInt(time_map[id]);
-            // console.log(t);
-            if (t == 0) {
-                $("#" + id).children().last().prev().html("-:-:-");
-                //console.log("timer done");
-                return;
-            }
-            var hour = parseInt(t / 3600);
-            var min = parseInt(t / 60 % 60);
-            var sec = parseInt(t % 60);
-            hour= zfill(hour,2);
-            min = zfill(min, 2);
-            sec = zfill(sec, 2);
-            $("#" + id).children().last().prev().html(hour + ":" + min + ":" + sec);
-        }, 1000);
-    }
+    // function m_timer(id) {
+    //     window.setInterval(function () {
+    //         if (time_map[id] == 0)
+    //             time_map[id] = 0;
+    //         else
+    //             time_map[id]--;
+    //
+    //         var t = parseInt(time_map[id]);
+    //         // console.log(t);
+    //         if (t == 0) {
+    //             $("#" + id).children().last().prev().html("-:-:-");
+    //             //console.log("timer done");
+    //             return;
+    //         }
+    //         var hour = parseInt(t / 3600);
+    //         var min = parseInt(t / 60 % 60);
+    //         var sec = parseInt(t % 60);
+    //         hour= zfill(hour,2);
+    //         min = zfill(min, 2);
+    //         sec = zfill(sec, 2);
+    //         $("#" + id).children().last().prev().html(hour + ":" + min + ":" + sec);
+    //     }, 1000);
+    // }
 
     $(function () {
         console.log("init done");
